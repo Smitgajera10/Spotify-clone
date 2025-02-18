@@ -1,0 +1,107 @@
+body {
+    padding-top: 60px;
+}
+
+nav {
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
+
+img {
+    background-color: unset;
+    filter: invert(1);
+}
+
+.no-filter {
+    filter: none;
+}
+
+.play img {
+    filter: invert(0);
+}
+
+.hidden {
+    display: none;
+}
+
+.searchbar {
+    display: flex;
+}
+
+.home {
+    height: 50px;
+    width: 50px;
+    border-radius: 100%;
+    background-color: #1f1f1f;
+}
+
+input {
+    background-color: #1f1f1f;
+    width: 25rem;
+    height: 45px;
+    border-radius: 32px;
+    text-align: left;
+    padding-left: 42px;
+    color: #656565;
+}
+
+.search img {
+    padding: 3px 3px;
+    margin-left: 5px;
+    margin-top: 7px;
+}
+
+.searchbar img {
+    width: 30px;
+}
+
+.rightbar > ul {
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.rightbar > ul > li {
+    padding: 0px 20px;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.rightbar > ul > li:hover {
+    opacity: 1.0;
+}
+
+.login {
+    background-color: white;
+    color: black;
+    border-radius: 30px;
+    padding-top: 5px;
+    padding-left: 12px;
+}
+
+.left {
+    position: fixed;
+    top: 60px; 
+    left: 0;
+    width: 30vw;
+    height: calc(100vh - 60px); 
+    background-color: #121212;
+    border-radius: 8px;
+    margin: 15px 10px;
+    overflow-y: auto; 
+}
+.name{
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.right {
+    width: 70vw;
+    height: 200vh;
+    background-color: #121212;
+    border-radius: 8px;
+    margin: 15px 10px;
+    margin-left: 32vw; 
+}
+
