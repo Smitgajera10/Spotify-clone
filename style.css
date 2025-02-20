@@ -1,3 +1,7 @@
+*{
+    transition: opacity 0.3s ease;
+}
+
 body {
     padding-top: 60px;
 }
@@ -18,13 +22,15 @@ img {
     filter: none;
 }
 
+.play{
+    opacity: 0;
+}
+
 .play img {
     filter: invert(0);
 }
 
-.hidden {
-    display: none;
-}
+
 
 .searchbar {
     display: flex;
@@ -84,11 +90,11 @@ input {
     position: fixed;
     top: 60px; 
     left: 0;
-    width: 30vw;
+    width: 28vw;
     height: calc(100vh - 60px); 
     background-color: #121212;
     border-radius: 8px;
-    margin: 15px 10px;
+    margin: 15px 8px;
     overflow-y: auto; 
 }
 .name{
@@ -102,6 +108,18 @@ input {
     background-color: #121212;
     border-radius: 8px;
     margin: 15px 10px;
-    margin-left: 32vw; 
+    margin-left: 30vw; 
 }
 
+
+.card:hover .play{
+    opacity: 1;
+    transform: translateY(-10px);
+    transition: transform 0.3s ease-out;
+}
+
+.play:hover{
+    background-color: rgb(85, 222, 83);
+    width: 50px;
+    height: 50px;
+}
