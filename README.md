@@ -1,6 +1,6 @@
 # 🎧 Spotify Clone – Curated Songs + Search (v2.0)
 
-A full-stack Spotify clone using the **MERN** stack, now powered by ** API** for real music streaming. Search, play, and explore songs and artists — all in a fully responsive UI.
+A full-stack Spotify clone using the **MERN** stack, now powered by **API** for real music streaming. Search, play, and explore songs and artists — all in a fully responsive UI.
 
 ---
 
