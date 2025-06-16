@@ -5,7 +5,7 @@ import TextInput from '../components/TextInput';
 import CloudinaryUpload from '../components/CloudinaryUpload';
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
-import { makeAuthenticatedPOSTRequest } from '../utils/serverHelpers';
+import { makeAuthenticatedPOSTRequest } from '../utils/ServerHelpers';
 import LoggedInContainer from '../containers/LoggedInContainer';
 
 

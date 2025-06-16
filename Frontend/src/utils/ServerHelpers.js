@@ -59,7 +59,7 @@ export const makeAuthenticatedDELETERequest = async (route) => {
     return formattedResponse;
 };
 
-// Add to serverHelpers.js
+
 export const makeAuthenticatedPUTRequest = async (route, body, isFormData = false) => {
     const token = getToken();
     

@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useContext } from "react";
 import LoggedInContainer from "../containers/LoggedInContainer";
-import { makeAuthenticatedGETRequest } from "../utils/serverHelpers.js";
+import { makeAuthenticatedGETRequest } from "../utils/ServerHelpers.js";
 import SingleSongCard from "../components/SingleSongCard";
 import { SearchContext } from "../contexts/SearchContext.jsx";
 

@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import PasswordInput from '../components/PasswordInput';
 import { useForm } from "react-hook-form";
 import { useCookies } from "react-cookie";
-import { makeUnauthenticatedPOSTRequest } from "../utils/serverHelpers";
+import { makeUnauthenticatedPOSTRequest } from "../utils/ServerHelpers";
 
 function SignUp() {
     const { register, handleSubmit, formState: { errors }, watch } = useForm();

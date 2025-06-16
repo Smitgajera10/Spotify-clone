@@ -1,7 +1,7 @@
 import './Home.css';
 import { useEffect, useState } from 'react';
 import SingleSongCard from '../components/SingleSongCard';
-import { makeAuthenticatedGETRequest } from '../utils/serverHelpers';
+import { makeAuthenticatedGETRequest } from '../utils/ServerHelpers';
 import LoggedInContainer from '../containers/LoggedInContainer';
 
 function MyMusic() {

@@ -5,7 +5,7 @@ import {
     makeAuthenticatedGETRequest,
     makeAuthenticatedPOSTRequest,
     makeAuthenticatedDELETERequest,
-} from "../utils/serverHelpers";
+} from "../utils/ServerHelpers";
 import songContext from '../contexts/songContext.js';
 import SingleSongCard from "../components/SingleSongCard";
 

@@ -6,7 +6,7 @@ import { Icon } from '@iconify/react';
 import songContext from '../contexts/songContext.js';
 import IconText from '../components/IconText.jsx';
 import { SearchContext } from '../contexts/SearchContext.jsx';
-import { makeAuthenticatedGETRequest, makeAuthenticatedPOSTRequest } from '../utils/serverHelpers.js';
+import { makeAuthenticatedGETRequest, makeAuthenticatedPOSTRequest } from '../utils/ServerHelpers.js';
 import PlaylistCard from '../components/PlaylistCard.jsx';
 import CreatePlayListModel from '../models/CreatePlaylistModel.jsx';
 import AddToPlaylistModel from '../models/AddToPlaylistModel.jsx';

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
-import { makeAuthenticatedGETRequest, makeAuthenticatedPOSTRequest } from '../utils/serverHelpers';
+import { makeAuthenticatedGETRequest, makeAuthenticatedPOSTRequest } from '../utils/ServerHelpers';
 
 function AddToPlaylistModel({ show, onClose, onAdd, selectedSong }) {
   const [myPlaylists, setMyPlaylists] = useState([]);

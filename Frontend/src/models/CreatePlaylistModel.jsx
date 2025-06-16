@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { makeAuthenticatedPOSTRequest } from '../utils/serverHelpers';
+import { makeAuthenticatedPOSTRequest } from '../utils/ServerHelpers';
 
 function CreatePlaylistModel({ show, onClose, fetchPlaylists}) {
   const [playlistName, setPlaylistName] = useState('');

@@ -3,7 +3,7 @@ import LoggedInContainer from '../containers/LoggedInContainer';
 import { useContext, useEffect, useState } from 'react';
 import songContext from '../contexts/songContext';
 import TrendingContext from '../contexts/TrendingContext';
-import { makeAuthenticatedGETRequest } from '../utils/serverHelpers';
+import { makeAuthenticatedGETRequest } from '../utils/ServerHelpers';
 import SkeletonCard from '../components/SkeletonCard';
 import { useNavigate } from 'react-router';
 function LoggedinHome() {
