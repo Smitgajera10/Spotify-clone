@@ -4,6 +4,7 @@ const User = require("./models/User");
 const authRoutes = require("./routes/auth");
 const songRoutes = require("./routes/song");
 const playlistRoutes = require("./routes/playlist");
+const apiRoutes = require("./routes/api");
 const passport = require("passport");
 const cors = require("cors");
 const JwtStrategy = require("passport-jwt").Strategy,
@@ -11,7 +12,7 @@ const JwtStrategy = require("passport-jwt").Strategy,
 require("dotenv").config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT;
 
 // for security of connecting fronted to backend ip
 app.use(cors());
@@ -58,6 +59,7 @@ app.use(passport.initialize());
 app.use("/auth", authRoutes);
 app.use("/song", songRoutes);
 app.use("/playlist", playlistRoutes);
+app.use("/api" , apiRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

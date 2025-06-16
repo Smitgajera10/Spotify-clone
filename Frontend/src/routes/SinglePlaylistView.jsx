@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useContext } from "react";
 import { useParams } from "react-router-dom";
 import LoggedInContainer from "../containers/LoggedInContainer";
 import {
@@ -6,6 +6,7 @@ import {
     makeAuthenticatedPOSTRequest,
     makeAuthenticatedDELETERequest,
 } from "../utils/serverHelpers";
+import songContext from '../contexts/songContext.js';
 import SingleSongCard from "../components/SingleSongCard";
 
 const SinglePlaylistView = () => {
@@ -18,6 +19,7 @@ const SinglePlaylistView = () => {
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef(null);
     const { playlistId } = useParams();
+    const { setPlaylist } = useContext(songContext);
 
     const getData = async () => {
         const response = await makeAuthenticatedGETRequest("/playlist/get/" + playlistId);
@@ -27,9 +29,16 @@ const SinglePlaylistView = () => {
         setEditing(false);
         setIsEditingThumbnail(false);
     };
+    
     useEffect(() => {
         getData();
     }, [playlistId]);
+
+    useEffect(() => {
+        if (playlistDetails?.songs?.length > 0) {
+            setPlaylist(playlistDetails.songs);
+        }
+    }, [playlistDetails?.songs]);
 
     const deleteSongFromPlaylist = async (songId) => {
         try {
@@ -80,13 +89,13 @@ const SinglePlaylistView = () => {
 
         const data = new FormData();
         data.append("file", thumbnailFile);
-        data.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "Smitgajera");
-        data.append("cloud_name", import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "dmorokjkq");
+        data.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+        data.append("cloud_name", import.meta.env.VITE_CLOUDINARY_CLOUD_NAME);
 
         try {
             setUploading(true);
             const response = await fetch(
-                import.meta.env.VITE_CLOUDINARY_API_URL || "https://api.cloudinary.com/v1_1/dmorokjkq/auto/upload",
+                import.meta.env.VITE_CLOUDINARY_API_URL,
                 {
                     method: "POST",
                     body: data,
@@ -140,7 +149,7 @@ const SinglePlaylistView = () => {
             }
         } catch (error) {
             console.error("Error deleting playlist:", error);
-            alert("Failed to delete playlist." , error.message || "");
+            alert("Failed to delete playlist.", error.message || "");
         }
     };
 

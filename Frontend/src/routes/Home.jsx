@@ -2,6 +2,7 @@ import './Home.css';
 import { Link, useNavigate } from "react-router-dom";
 import { Icon } from '@iconify/react';
 import { useEffect, useState } from 'react';
+import { makeUnauthenticatedPOSTRequest } from '../utils/ServerHelpers';
 
 function Home() {
   const [scrolled, setScrolled] = useState(false);
@@ -11,7 +12,8 @@ function Home() {
 
   useEffect(() => {
     // Check if mobile device
-    const checkIfMobile = () => {
+    const checkIfMobile = async() => {
+      const test = await makeUnauthenticatedPOSTRequest("/");
       const userAgent = navigator.userAgent;
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
       setIsMobile(isMobile);
@@ -188,7 +190,7 @@ function Home() {
                       className="w-full aspect-square object-cover rounded-lg shadow-lg group-hover:shadow-xl transition-all"
                       onError={(e) => {
                         e.target.onerror = null; 
-                        e.target.src = "https://via.placeholder.com/300/333333/ffffff?text=No+Image";
+                        e.target.src = "";
                       }}
                     />
                     <button className="absolute bottom-2 right-2 bg-green-500 rounded-full p-3 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all hover:scale-105 shadow-lg">
@@ -219,7 +221,7 @@ function Home() {
                         className="w-full h-full object-cover group-hover:brightness-75 transition-all"
                         onError={(e) => {
                           e.target.onerror = null; 
-                          e.target.src = "https://via.placeholder.com/300/333333/ffffff?text=No+Image";
+                          e.target.src = "";
                         }}
                       />
                     </div>
@@ -255,7 +257,7 @@ function Home() {
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               e.target.onerror = null; 
-                              e.target.src = "https://via.placeholder.com/300/333333/ffffff?text=No+Image";
+                              e.target.src = "";
                             }}
                           />
                         </div>
@@ -283,7 +285,7 @@ function Home() {
                       className="w-full aspect-square object-cover rounded-lg shadow-lg group-hover:shadow-xl transition-all"
                       onError={(e) => {
                         e.target.onerror = null; 
-                        e.target.src = "https://via.placeholder.com/300/333333/ffffff?text=No+Image";
+                        e.target.src = "";
                       }}
                     />
                     <button className="absolute bottom-2 right-2 bg-green-500 rounded-full p-3 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all hover:scale-105 shadow-lg">
@@ -313,7 +315,7 @@ function Home() {
                       className="w-full aspect-square object-cover rounded-lg shadow-lg group-hover:shadow-xl transition-all"
                       onError={(e) => {
                         e.target.onerror = null; 
-                        e.target.src = "https://via.placeholder.com/300/333333/ffffff?text=No+Image";
+                        e.target.src = "";
                       }}
                     />
                     <button className="absolute bottom-2 right-2 bg-green-500 rounded-full p-3 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all hover:scale-105 shadow-lg">

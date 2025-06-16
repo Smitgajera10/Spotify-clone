@@ -9,44 +9,53 @@ import UploadSong from "./routes/UploadSong.jsx";
 import MyMusic from "./routes/MyMusic.jsx";
 import SearchPage from "./routes/SearchPage.jsx";
 import songContext from "./contexts/songContext.js";
-import {SearchProvider} from "./contexts/SearchContext.jsx";
+import { SearchProvider } from "./contexts/SearchContext.jsx";
 import { useState } from "react";
 import SinglePlaylistView from "./routes/SinglePlaylistView.jsx";
+import TrendingContext from "./contexts/TrendingContext.js";
+import TrendingSongs from "./routes/TrendingSongs.jsx";
 
 function App() {
   const [cookie, setCookie] = useCookies(["token"]);
-  const [currentSong , setCurrentSong] = useState(null);
+  const [currentSong, setCurrentSong] = useState(null);
   const [soundPlayed, setSoundPlayed] = useState(null);
   const [isPaused, setIsPaused] = useState(true);
+  const [playlist, setPlaylist] = useState([]);
+
+  const [trendingSongs, setTrendingSongs] = useState([]);
+  const [trendingPlaylists, setTrendingPlaylists] = useState([]);
+  const [trendingArtists, setTrendingArtists] = useState([]);
 
   return (
     <>
-
       <BrowserRouter>
-        {cookie.token ? (
-          // routes for loggdin
-          <SearchProvider>
-            <songContext.Provider value={{currentSong, setCurrentSong , soundPlayed, setSoundPlayed, isPaused, setIsPaused}}>  
+        <TrendingContext.Provider value={{ trendingSongs, setTrendingSongs, trendingPlaylists, setTrendingPlaylists, trendingArtists, setTrendingArtists }}>
+          {cookie.token ? (
+            // routes for loggdin
+            <SearchProvider>
+              <songContext.Provider value={{ currentSong, setCurrentSong, soundPlayed, setSoundPlayed, isPaused, setIsPaused, playlist, setPlaylist }}>
+                <Routes>
+                  <Route path='/' element={<LoggedinHome />} />
+                  <Route path='/uploadSong' element={<UploadSong />} />
+                  <Route path='/myMusic' element={<MyMusic />} />
+                  <Route path='/search' element={<SearchPage />} />
+                  <Route path='/playlist/:playlistId' element={<SinglePlaylistView />} />
+                  <Route path='/trending-songs' element={<TrendingSongs/>} />
+                  <Route path='*' element={<Navigate to="/" />} />
+                </Routes>
+              </songContext.Provider>
+            </SearchProvider>
+
+          ) : (
+            //routes for not login
             <Routes>
-              <Route path='/' element={<LoggedinHome />} />
-              <Route path='/uploadSong' element={<UploadSong />} />
-              <Route path='/myMusic' element={<MyMusic />} />
-              <Route path='/search' element={<SearchPage />} />
-              <Route path='/playlist/:playlistId' element={<SinglePlaylistView />} />
-              <Route path='*' element={<Navigate to="/" />} />
+              <Route path='/' element={<Home />} />
+              <Route path='/login' element={<Login />} />
+              <Route path='/signup' element={<SignUp />} />
+              <Route path='*' element={<Navigate to="/login" />} />
             </Routes>
-          </songContext.Provider>
-          </SearchProvider>
-          
-        ) : (
-          //routes for not login
-          <Routes>
-            <Route path='/' element={<Home />} />
-            <Route path='/login' element={<Login />} />
-            <Route path='/signup' element={<SignUp />} />
-            <Route path='*' element={<Navigate to="/login" />} />
-          </Routes>
-        )}
+          )}
+        </TrendingContext.Provider>
       </BrowserRouter>
 
     </>

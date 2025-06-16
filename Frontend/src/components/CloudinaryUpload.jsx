@@ -16,12 +16,12 @@ const CloudinaryUpload = ({setUrl , setName}) => {
         const data = new FormData();
         data.append("file", file);
         data.append("upload_preset", import.meta.env.VITE_CLOUDINARY_PRESET || "Smitgajera"); 
-        data.append("cloud_name", import.meta.env.VITE_CLOUDINARY_FOLDER || "dmorokjkq"); 
+        data.append("cloud_name", import.meta.env.VITE_CLOUDINARY_FOLDER); 
 
         try {
             setUploading(true);
             console.log("Sending fetch request..."); // Debugging log
-            const res = await fetch(import.meta.env.VITE_CLOUDINARY_URL || "https://api.cloudinary.com/v1_1/dmorokjkq/image/upload", {
+            const res = await fetch(import.meta.env.VITE_CLOUDINARY_URL, {
                 method: "POST",
                 body: data,
             });

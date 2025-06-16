@@ -26,7 +26,7 @@ function AddToPlaylistModel({ show, onClose, onAdd, selectedSong }) {
   const handlePlaylistClick = (playlist) => {
   if (!selectedSong || !selectedSong._id) return;
 
-  const isSongPresent = playlist.songs?.includes(selectedSong._id);
+  const isSongPresent = playlist.songs?.find(song => song.track === selectedSong.track);
 
 
   if (isSongPresent) {

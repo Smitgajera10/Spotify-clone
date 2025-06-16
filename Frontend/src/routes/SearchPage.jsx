@@ -1,18 +1,16 @@
-import { useRef , useEffect, useState, useContext } from "react";
+import { useRef, useEffect, useState, useContext } from "react";
 import LoggedInContainer from "../containers/LoggedInContainer";
 import { makeAuthenticatedGETRequest } from "../utils/serverHelpers.js";
 import SingleSongCard from "../components/SingleSongCard";
 import { SearchContext } from "../contexts/SearchContext.jsx";
-import { useNavigate } from "react-router";
 
 const SearchPage = () => {
     const searchInputRef = useRef(null);
-    const {searchValue, setSearchValue} = useContext(SearchContext);
+    const { searchValue } = useContext(SearchContext);
     const [debouncedValue, setDebouncedValue] = useState("");
     const [songData, setSongData] = useState([]);
 
-     useEffect(() => {
-        // Example: focus the search bar when SearchPage mounts
+    useEffect(() => {
         if (searchInputRef.current) {
             searchInputRef.current.focus();
         }
@@ -26,25 +24,31 @@ const SearchPage = () => {
         return () => {
             clearTimeout(handler);
         };
-    },[searchValue]);
-    const navigate = useNavigate();
+    }, [searchValue]);
 
     //call api when debouncedValue changes
     useEffect(() => {
-        if(debouncedValue.trim() !== "") {
+        if (debouncedValue.trim() !== "") {
             searchSong();
         }
     }, [debouncedValue]);
 
 
-    const searchSong = async() => {
+    const searchSong = async () => {
         if (!debouncedValue.trim()) return;
-        const response = await makeAuthenticatedGETRequest("/song/get/songname/" + debouncedValue);
-        setSongData(response.data);
+
+        try {
+            const apiSongs = await makeAuthenticatedGETRequest(`/api/search?query=${searchValue}`);
+            setSongData(apiSongs);
+            console.log("Search results (combined):", apiSongs);
+        } catch (err) {
+            console.error("Search failed:", err);
+        }
     };
+
     return (
         <LoggedInContainer curActiveScreen={"search"} searchInputRef={searchInputRef} >
-        
+
             <div>
                 {songData.length > 0 ? (
                     <div className="pt-5 pl-4 space-y-2">
@@ -54,7 +58,7 @@ const SearchPage = () => {
                         {songData.map((item) => (
                             <SingleSongCard info={item}
                                 key={JSON.stringify(item)}
-                                playSound={()=>{}}/>                        
+                                playSound={() => { }} />
                         ))}
                     </div>
                 ) : (
