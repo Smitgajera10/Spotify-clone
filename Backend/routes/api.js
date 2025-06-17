@@ -36,7 +36,7 @@ router.get("/trending-songs", async (req, res) => {
 
     // 1. Fetch trending songs from Gaanapy
     const gaanaRes = await axios.get(
-      `https://gaanaapi-skud.onrender.com/trending?language=Hindi&limit=${limit}`
+      `${process.env.SCCRAPER_URL}/trending?language=Hindi&limit=${limit}`
     );
     const trending = gaanaRes.data || [];
 
