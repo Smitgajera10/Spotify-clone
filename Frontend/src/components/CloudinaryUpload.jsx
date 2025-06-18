@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const CloudinaryUpload = ({setUrl , setName}) => {
+const CloudinaryUpload = ({ setUrl, setName }) => {
     const [uploading, setUploading] = useState(false);
     const [fileName, setFileName] = useState("");
     const handleFileUpload = async (event) => {
@@ -10,13 +10,20 @@ const CloudinaryUpload = ({setUrl , setName}) => {
             console.log("No file selected")
             return;
         }
+
+        const MAX_SIZE = 10 * 1024 * 1024;
+        if (file.size > MAX_SIZE) {
+            alert("File is too large. Max allowed is 10 MB.");
+            return;
+        }
+        
         setFileName(file.name);
-        console.log("Selected file:", file); 
+        console.log("Selected file:", file);
 
         const data = new FormData();
         data.append("file", file);
-        data.append("upload_preset", import.meta.env.VITE_CLOUDINARY_PRESET || "Smitgajera"); 
-        data.append("cloud_name", import.meta.env.VITE_CLOUDINARY_FOLDER); 
+        data.append("upload_preset", import.meta.env.VITE_CLOUDINARY_PRESET || "Smitgajera");
+        data.append("cloud_name", import.meta.env.VITE_CLOUDINARY_FOLDER);
 
         try {
             setUploading(true);
@@ -59,7 +66,7 @@ const CloudinaryUpload = ({setUrl , setName}) => {
                 {fileName ? `Selected: ${fileName}` : "Choose a file"}
             </label>
             {uploading && <p className="text-red-500">Uploading...</p>}
-            
+
         </div>
     );
 };
