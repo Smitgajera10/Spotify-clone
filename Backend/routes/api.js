@@ -25,7 +25,7 @@ router.get('/search', async (req, res) => {
       _id : song.id,
       name: song.name,
       thumbnail: song.image?.[2]?.url || '',
-      track: song.downloadUrl?.[4]?.url || '',
+      track: song.downloadUrl?.[4]?.url.replace("http://", "https://") || '',
       artist: undefined ,
       artistName : song.artists?.primary?.[0].name
     }));
@@ -72,8 +72,8 @@ async function updateTrendingSongs() {
             name: match.name,
             thumbnail: match.image?.[2]?.url || "",
             artistName: match.artists?.primary?.[0].name,
-            track: match.downloadUrl?.[4]?.url || "",
-            artist: undefined
+            track: match.downloadUrl?.[4]?.url.replace("http://", "https://") || "",
+            artist : undefined
           };
         } catch (e) {
           return null;
