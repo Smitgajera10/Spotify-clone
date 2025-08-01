@@ -97,6 +97,7 @@ async function updateTrendingSongs() {
 
 // Schedule to run once a week (Sunday)
 cron.schedule("0 0 * * 0", updateTrendingSongs);
+updateTrendingSongs()
 
 // Popular Albums
 router.get("/popular-albums", async (req, res) => {

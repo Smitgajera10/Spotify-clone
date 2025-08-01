@@ -16,8 +16,6 @@ function Login() {
         const responce = await makeUnauthenticatedPOSTRequest("/auth/login" , data);
 
         if(responce && !responce.error){
-            console.log(responce);
-
             // store the token for 30 days (30 days cookie login)
             const token = responce.token;
             const date = new Date();
