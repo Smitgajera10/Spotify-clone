@@ -6,7 +6,6 @@ const passport = require("passport");
 const Playlist = require("../models/Playlist");
 const Song = require("../models/Song");
 const puppeteer = require("puppeteer");
-const chromium = require("chrome-aws-lambda");
 const axios = require("axios");
 const router = express.Router();
 
