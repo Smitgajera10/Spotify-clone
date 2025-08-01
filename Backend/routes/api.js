@@ -1,4 +1,11 @@
 const express = require('express')
+require('dotenv').config();
+const TrendingSongs = require("../models/TrendingSongs");
+const cron = require("node-cron");
+const passport = require("passport");
+const Playlist = require("../models/Playlist");
+const Song = require("../models/Song");
+const puppeteer = require("puppeteer");
 const axios = require("axios");
 const router = express.Router();
 
@@ -25,68 +32,71 @@ router.get('/search', async (req, res) => {
 
     res.json(formattedSongs);
   } catch (error) {
-    console.error('Search error:', error.message);
+    console.error('Search error:', error);
     res.status(500).json({ error: 'Failed to fetch songs' });
   }
 });
 
-router.get("/trending-songs", async (req, res) => {
+
+router.get("/tsongs", async (req, res) => {
   try {
-    const limit = req.query.limit || "12";
+    const trendingDoc = await TrendingSongs.findOne();
 
-    // 1. Fetch trending songs from Gaanapy
-    const gaanaRes = await axios.get(
-      `${process.env.SCCRAPER_URL}/trending?language=Hindi&limit=${limit}`
-    );
-    const trending = gaanaRes.data || [];
+    if (trendingDoc && Array.isArray(trendingDoc.songs) && trendingDoc.songs.length > 0) {
+      return res.json({ trendingSongs: trendingDoc.songs });
+    }
 
-    // 2. Parallel search in api
+    // Optional: Fallback response if no trending data is available
+    return res.json({ trendingSongs: [] });
+  } catch (err) {
+    console.error("Trending fetch failed:", err.message);
+    res.status(500).json({ error: "Trending fetch failed" });
+  }
+});
+
+async function updateTrendingSongs() {
+  try {
+    const trending = await scrapeSpotifyPlaylist("https://open.spotify.com/playlist/37i9dQZF1DX0XUfTFmNBRM");
     const results = await Promise.all(
-      trending.map(async (song) => {
-        const songTitle = song?.title?.trim();
+      trending.map(async (songTitle) => {
         if (!songTitle) return null;
-
         try {
           const searchRes = await axios.get(
             `${SAAVN_BASE_URL}/search/songs`,
-            {
-              params: { query: songTitle },
-            }
+            { params: { query: songTitle } }
           );
-
           const match = searchRes.data?.data?.results?.[0];
           if (!match) return null;
-
           return {
             _id: match.id,
             name: match.name,
             thumbnail: match.image?.[2]?.url || "",
             artistName: match.artists?.primary?.[0].name,
             track: match.downloadUrl?.[4]?.url || "",
-            artist : undefined
+            artist: undefined
           };
         } catch (e) {
-          console.warn(`Search failed for "${songTitle}":`, e.message);
           return null;
         }
       })
     );
-    
-    const uniqueSongsMap = new Map();
-    results.filter(Boolean).forEach((song) => {
-      if (!uniqueSongsMap.has(song._id)) {
-        uniqueSongsMap.set(song._id, song);
-      }
-    });
+    const uniqueSongs = Array.from(new Map(results.filter(Boolean).map(song => [song._id, song])).values());
 
-    const uniqueSongs = Array.from(uniqueSongsMap.values());
-    // 3. Filter out nulls and send
-    res.json({ trendingSongs: uniqueSongs});
+    // Clear old trending songs and save new ones
+    await TrendingSongs.updateOne(
+      {},
+      { songs: uniqueSongs, updatedAt: new Date() },
+      { upsert: true }
+    );
+
+    console.log("Trending songs updated!");
   } catch (err) {
-    console.error("Trending fetch failed:", err.message);
-    res.status(500).json({ error: "Trending fetch failed" });
+    console.error("Failed to update trending songs:", err.message);
   }
-});
+}
+
+// Schedule to run once a week (Sunday)
+cron.schedule("0 0 * * 0", updateTrendingSongs);
 
 // Popular Albums
 router.get("/popular-albums", async (req, res) => {
@@ -192,5 +202,144 @@ router.get("/indias-best", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch India's best" });
   }
 });
+
+router.post(
+  "/playlist/add/songs",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
+    try {
+      const currentUser = req.user;
+      const { playlistId } = req.body;
+      const playlist = await Playlist.findById(playlistId);
+      
+
+      const isOwner = playlist.owner.equals(currentUser._id);
+      const isCollaborator = playlist.collebrators.includes(currentUser._id);
+      if (!isOwner && !isCollaborator) {
+        throw new Error("Not allowed to modify playlist");
+      }
+      const songTitles = await scrapeSpotifyPlaylist(req.body.playlistUrl);
+      if (!Array.isArray(songTitles) || songTitles.length === 0) {
+        return res.status(400).json({ error: "No song titles provided" });
+      }
+
+      if (!playlist) {
+        return res.status(404).json({ error: "Playlist does not exist" });
+      }
+
+      const addedSongs = [];
+
+      for (const title of songTitles) {
+        try {
+          const searchRes = await axios.get(`${SAAVN_BASE_URL}/search/songs`, {
+            params: { query: title },
+          });
+
+          const match = searchRes.data?.data?.results?.[0];
+          if (!match) continue;
+
+          // Check if song already exists in DB
+          let song = await Song.findOne({ track: match.downloadUrl?.[4]?.url });
+          if (!song) {
+            const newSong = await Song.create({
+              name: match.name,
+              thumbnail: match.image?.[2]?.url || "",
+              track: match.downloadUrl?.[4]?.url?.replace("http://", "https://") || "",
+              artist: undefined, // Fill artist ObjectId if needed
+            });
+            song = newSong;
+          }
+
+          // Add song to playlist only if not already present
+          if (!playlist.songs.includes(song._id)) {
+            playlist.songs.push(song._id);
+            addedSongs.push(song.name);
+          }
+        } catch (e) {
+          console.warn(`Search failed for title "${title}":`, e.message);
+          continue;
+        }
+      }
+
+      await playlist.save();
+      await playlist.populate("songs")
+
+      return res.status(200).json({
+        message: `${addedSongs.length} song(s) added`,
+        addedSongs,
+        playlist,
+      });
+    } catch (err) {
+      console.error("Add songs by name failed:", err.message);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+async function scrapeSpotifyPlaylist(playlistUrl) {
+  if (!playlistUrl?.includes("open.spotify.com/playlist/")) {
+    throw new Error("Invalid Spotify playlist URL");
+  }
+
+  const browser = await puppeteer.launch({ headless: true, args: ["--no-sandbox"] });
+  const page = await browser.newPage();
+  await page.goto(playlistUrl, { waitUntil: "networkidle2" });
+
+  await page.waitForSelector('[data-testid="tracklist-row"]', { timeout: 10000 });
+  await autoScroll(page);
+
+  const songs = await page.evaluate(() => {
+  return Array.from(document.querySelectorAll('[data-testid="tracklist-row"]')).map(row => {
+    const titleEl = row.querySelector(
+      'a[data-testid="internal-track-link"] div.e-91000-text.encore-text-body-medium'
+    );
+    const title = titleEl?.textContent.trim() ?? null;
+
+    const artistEls = row.querySelectorAll(
+      'span.e-91000-text.encore-text-body-small a[href*="/artist/"]'
+    );
+    const artists = artistEls.length
+      ? Array.from(artistEls).map(el => el.textContent.trim()).join(', ')
+      : null;
+
+    return title && artists
+      ? `${title}`
+      : null;
+  }).filter(Boolean);
+});
+
+
+  await browser.close();
+  return songs;
+}
+
+async function autoScroll(page) {
+  await page.evaluate(async () => {
+    await new Promise((resolve) => {
+      let previousHeight = 0;
+      let retries = 0;
+      const interval = setInterval(() => {
+        const scrollHeight = document.documentElement.scrollHeight;
+        window.scrollBy(0, 500);
+
+        if (scrollHeight !== previousHeight) {
+          previousHeight = scrollHeight;
+          retries = 0;
+        } else {
+          retries++;
+        }
+
+        // If nothing new loads after several tries, stop
+        if (retries > 5) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 500);
+    });
+  });
+}
+
+
+
 
 module.exports = router;

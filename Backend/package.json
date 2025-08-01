@@ -9,8 +9,10 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.13.0",
     "mongoose": "^8.10.1",
+    "node-cron": "^4.2.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "puppeteer": "^24.11.2",
     "tailwindcss": "^4.0.9"
   },
   "name": "spotify",
