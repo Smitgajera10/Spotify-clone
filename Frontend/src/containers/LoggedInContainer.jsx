@@ -61,7 +61,7 @@ function LoggedInContainer({ children, curActiveScreen, searchInputRef }) {
       // Auto play next song when current ends
       const index = playlist.findIndex((s) => s._id === currentSong._id);
       if (index !== -1 && index < playlist.length - 1) {
-        const nextSong = playlist[index + 1];
+        const nextSong = (index + 1) % playlist.length;
         setCurrentSong(nextSong);
       }
     },
@@ -99,11 +99,24 @@ function LoggedInContainer({ children, curActiveScreen, searchInputRef }) {
   const fetchPlaylists = async () => {
     try {
       const response = await makeAuthenticatedGETRequest("/playlist/me");
+      if (response.status === 401) {
+        alert("Session expired. Please login again.");
+        localStorage.clear();
+        document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+        window.location.href = "/";
+      }
+
       if (!response) throw new Error('Error fetching playlists');
       setUserPlaylists(response.data || []);
     } catch (error) {
       console.error('Error fetching playlists:', error);
     }
+  };
+
+  const handleLogout = () => {
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+    console.log("Token cookie removed");
+    localStorage.clear();
   };
 
   return (
@@ -136,47 +149,78 @@ function LoggedInContainer({ children, curActiveScreen, searchInputRef }) {
               className="pl-10 pr-4 py-2 rounded-2xl bg-[#1f1f1f] text-white text-sm w-full outline-none"
             />
           </div>
-          <button 
-            onClick={() => setShowMobileMenu(!showMobileMenu)} 
-            className="text-white p-2"
+          <button
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="text-white p-2 transition-transform duration-300 hover:scale-110"
             aria-label={showMobileMenu ? "Close menu" : "Open menu"}
           >
             <Icon icon={showMobileMenu ? "material-symbols:close" : "material-symbols:menu"} width="30" />
           </button>
         </div>
 
-        {/* Mobile Menu */}
-        {showMobileMenu && (
-          <div className="sm:hidden fixed inset-0 z-50 bg-black bg-opacity-90">
-            <div className="bg-[#121212] p-6 h-full overflow-y-auto">
-              <div className="flex flex-col space-y-6">
-                <Link to="/home" className="flex items-center py-2" onClick={() => setShowMobileMenu(false)}>
-                  <Icon icon="material-symbols-light:home" width="24" className="mr-4" />
-                  <span className="text-lg">Home</span>
-                </Link>
-                <Link to="/myMusic" className="flex items-center py-2" onClick={() => setShowMobileMenu(false)}>
-                  <Icon icon="lucide:music" width="24" className="mr-4" />
-                  <span className="text-lg">My Music</span>
-                </Link>
-                <div className="flex items-center py-2">
-                  <Icon icon="bx:library" width="24" className="mr-4" />
-                  <span className="text-lg">Your Library</span>
-                </div>
-                <div 
-                  className="flex items-center py-2 cursor-pointer" 
-                  onClick={() => { setCreatePlaylistModal(true); setShowMobileMenu(false); }}
+        {/* Mobile Menu  */}
+        <div className={`sm:hidden fixed inset-0 z-50 transition-all duration-300 ease-[cubic-bezier(0.17,0.67,0.21,0.99)] ${showMobileMenu ? 'opacity-100 visible' : 'opacity-0 invisible delay-300'}`}>
+          {/* Overlay background */}
+          <div
+            className={`absolute inset-0 bg-black transition-opacity duration-300 ${showMobileMenu ? 'opacity-90' : 'opacity-0'}`}
+            onClick={() => setShowMobileMenu(false)}
+          />
+
+          {/* Menu */}
+          <div className={`absolute top-0 right-0 h-full w-4/5 max-w-sm bg-[#121212] shadow-xl transition-transform duration-300 ease-[cubic-bezier(0.17,0.67,0.21,0.99)] ${showMobileMenu ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className="p-6 h-full overflow-y-auto">
+              <div className="flex justify-between items-center mb-8">
+                <Icon icon="logos:spotify-icon" width="40" />
+                <button
+                  onClick={() => setShowMobileMenu(false)}
+                  className="text-white p-2 transition-transform duration-300 hover:scale-110 hover:text-red-500"
+                  aria-label="Close menu"
                 >
-                  <Icon icon="material-symbols:add" width="24" className="mr-4" />
-                  <span className="text-lg">Create Playlist</span>
-                </div>
-                <Link to="/uploadSong" className="flex items-center py-2" onClick={() => setShowMobileMenu(false)}>
-                  <Icon icon="material-symbols:upload" width="24" className="mr-4" />
-                  <span className="text-lg">Upload Song</span>
-                </Link>
+                  <Icon icon="material-symbols:close" width="30" />
+                </button>
+              </div>
+
+              <div className="flex flex-col space-y-6">
+                {[
+                  { to: "/home", icon: "material-symbols-light:home", text: "Home" },
+                  { to: "/myMusic", icon: "lucide:music", text: "My Music" },
+                  { to: "/library", icon: "bx:library", text: "Your Library" },
+                  { action: () => { setCreatePlaylistModal(true); setShowMobileMenu(false); }, icon: "material-symbols:add", text: "Create Playlist" },
+                  { to: "/uploadSong", icon: "material-symbols:upload", text: "Upload Song" },
+                ].map((item, index) => (
+                  <div
+                    key={index}
+                    className="transform transition-transform duration-200 hover:translate-x-1"
+                    style={{ transitionDelay: showMobileMenu ? `${index * 50}ms` : '0ms' }}
+                    onClick={() => {
+                      if (item.action) item.action();
+                      else setShowMobileMenu(false);
+                    }}
+                  >
+                    {item.to ? (
+                      <Link to={item.to} className="flex items-center py-2">
+                        <Icon icon={item.icon} width="24" className="mr-4" />
+                        <span className="text-lg">{item.text}</span>
+                      </Link>
+                    ) : (
+                      <div className="flex items-center py-2 cursor-pointer">
+                        <Icon icon={item.icon} width="24" className="mr-4" />
+                        <span className="text-lg">{item.text}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                <button
+                  className='bg-red-600 m-auto px-3 p-2 rounded-2xl transform transition-transform duration-200 hover:scale-105'
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
               </div>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Desktop Navbar */}
         <nav className="hidden sm:flex items-center p-4 bg-black w-full top-0 left-0 right-0 z-50">
@@ -213,13 +257,15 @@ function LoggedInContainer({ children, curActiveScreen, searchInputRef }) {
               <div className="bg-white text-black rounded-full w-8 h-8 flex items-center justify-center ml-2">
                 <span className="font-semibold text-xs">SM</span>
               </div>
+              
           </div>
+          <button className='bg-red-600 m-auto ml-2 px-3 p-2 rounded-2xl' onClick={handleLogout}>Logout</button>
         </nav>
 
         {/* Content Layout */}
-        <div className="flex flex-col sm:flex-row flex-1 pb-24 sm:pb-0">
+        <div className="flex flex-col sm:flex-row h-[calc(100vh-80px)]">
           {/* Sidebar - Fixed height with overflow handling */}
-          <div className={`${showMobileMenu ? 'block' : 'hidden'} sm:block sm:w-64 min-h-[calc(100vh-140px)] bg-[#121212] rounded-lg m-2 overflow-hidden flex flex-col`}>
+          <div className={`${showMobileMenu ? 'block' : 'hidden'} sm:block sm:w-64 h-full bg-[#121212] rounded-lg m-2 overflow-y-auto custom-scrollbar hide-scrollbar`}>
             <div className="flex justify-between items-center p-4 border-b border-gray-800">
               <div className="flex items-center">
                 <Icon icon="bx:library" width="22" className="mr-2" />
@@ -282,7 +328,7 @@ function LoggedInContainer({ children, curActiveScreen, searchInputRef }) {
           </div>
 
           {/* Main Content */}
-          <div className="flex-grow min-h-[calc(100vh-140px)] overflow-auto bg-gradient-to-b from-[#1f1f1f] to-[#121212] rounded-lg m-2 sm:m-2 sm:ml-0 pb-20 sm:pb-0">
+          <div className="flex-grow overflow-auto bg-gradient-to-b from-[#1f1f1f] to-[#121212] rounded-lg m-2 sm:m-2 sm:ml-0 pb-20">
             {children}
           </div>
         </div>

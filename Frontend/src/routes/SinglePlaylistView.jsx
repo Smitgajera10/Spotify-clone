@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useContext } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import LoggedInContainer from "../containers/LoggedInContainer";
 import {
     makeAuthenticatedGETRequest,
@@ -8,6 +8,8 @@ import {
 } from "../utils/ServerHelpers";
 import songContext from '../contexts/songContext.js';
 import SingleSongCard from "../components/SingleSongCard";
+import SpotifyImportModal from "../models/SpotifyImportModal.jsx";
+import { Icon } from "@iconify/react/dist/iconify.js";
 
 const SinglePlaylistView = () => {
     const [playlistDetails, setPlaylistDetails] = useState({});
@@ -19,7 +21,10 @@ const SinglePlaylistView = () => {
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef(null);
     const { playlistId } = useParams();
-    const { setPlaylist } = useContext(songContext);
+    const {setCurrentSong, setPlaylist } = useContext(songContext);
+    const [showImportModal, setShowImportModal] = useState(false);
+    const navigate = useNavigate()
+
 
     const getData = async () => {
         const response = await makeAuthenticatedGETRequest("/playlist/get/" + playlistId);
@@ -29,7 +34,7 @@ const SinglePlaylistView = () => {
         setEditing(false);
         setIsEditingThumbnail(false);
     };
-    
+
     useEffect(() => {
         getData();
     }, [playlistId]);
@@ -89,18 +94,19 @@ const SinglePlaylistView = () => {
 
         const data = new FormData();
         data.append("file", thumbnailFile);
-        data.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
-        data.append("cloud_name", import.meta.env.VITE_CLOUDINARY_CLOUD_NAME);
+        data.append("upload_preset", import.meta.env.VITE_CLOUDINARY_PRESET);
+        data.append("cloud_name", import.meta.env.VITE_CLOUDINARY_FOLDER);
 
         try {
             setUploading(true);
             const response = await fetch(
-                import.meta.env.VITE_CLOUDINARY_API_URL,
+                import.meta.env.VITE_CLOUDINARY_URL,
                 {
                     method: "POST",
                     body: data,
                 }
             );
+            console.log(response)
             const result = await response.json();
             return result.secure_url;
         } catch (error) {
@@ -142,10 +148,12 @@ const SinglePlaylistView = () => {
 
         try {
             const response = await makeAuthenticatedDELETERequest(`/playlist/delete/${playlistId}`);
-            if (response) {
+            if (!response.error) {
                 alert("Playlist deleted.");
-                // Optional: redirect to your library/home page
-                window.location.href = "/";
+                navigate("/");
+            }
+            else{
+                throw Error("Not Allowed")
             }
         } catch (error) {
             console.error("Error deleting playlist:", error);
@@ -160,9 +168,45 @@ const SinglePlaylistView = () => {
             .catch(() => alert("Failed to copy link."));
     };
 
+    const handleImportSpotifyPlaylist= async(playlistLink)=>{
+        console.log("Importing:", playlistLink);
+        try{
+            const payload = {playlistId , playlistUrl : playlistLink}
+            const response = await makeAuthenticatedPOSTRequest(`/api/playlist/add/songs`, payload);
+            if(response.message){
+                window.alert(response.message);
+                console.log(response.playlist)
+                setPlaylistDetails(response.playlist);
+                setShowImportModal(false);
+
+            }
+            else{
+                throw new Error("Not Allowed")
+            }
+        }catch(err){
+            console.log(err);
+            alert(err.message)
+        }finally{
+        }
+    }
+
+    const handlePlayPlaylist = () => {
+        if (!playlistDetails.songs || playlistDetails.songs.length === 0) return;
+
+        const randomIndex = Math.floor(Math.random() * playlistDetails.songs.length);
+        const randomSong = playlistDetails.songs[randomIndex];
+
+        setPlaylist(playlistDetails.songs); // for autoplay context
+        setCurrentSong(randomSong);         // start playing random song
+    };
 
     return (
         <LoggedInContainer curActiveScreen={"library"}>
+            <SpotifyImportModal
+                show={showImportModal}
+                onClose={() => setShowImportModal(false)}
+                onImport={handleImportSpotifyPlaylist}
+            />
             {playlistDetails._id && (
                 <div className="relative">
                     <div
@@ -177,49 +221,66 @@ const SinglePlaylistView = () => {
                     >
                         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent"></div>
 
-                        <div className="absolute bottom-6 left-6 flex items-end gap-6">
-                            <div className="relative w-48 h-48 shadow-2xl group">
+                        <div className="absolute bottom-2 left-4 sm:bottom-6 sm:left-6 flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-6 w-[calc(100%-2rem)] sm:w-auto">
+                            <div className="relative w-32 h-32 sm:w-48 sm:h-48 shadow-2xl group">
                                 {thumbnailPreview ? (
                                     <img
                                         src={thumbnailPreview}
                                         alt="Playlist cover"
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-cover rounded"
                                     />
                                 ) : (
-                                    <div className="w-full h-full bg-gray-700 flex items-center justify-center">
-                                        <span className="text-4xl text-gray-400">🎵</span>
+                                    <div className="w-full h-full bg-gray-700 flex items-center justify-center rounded">
+                                        <span className="text-3xl sm:text-4xl text-gray-400">🎵</span>
                                     </div>
                                 )}
-
                                 {!isEditingThumbnail && (
                                     <button
                                         onClick={() => setIsEditingThumbnail(true)}
-                                        className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                        className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded"
                                     >
-                                        <span className="text-white text-sm font-medium">Change Image</span>
+                                        <span className="text-white text-xs sm:text-sm font-medium">Change Image</span>
                                     </button>
                                 )}
                             </div>
 
-                            <div className="text-white">
-                                <p className="text-sm font-medium">Playlist</p>
-                                <h1 className="text-5xl font-bold mt-2 mb-4">
+                            <div className="text-white mt-2 sm:mt-0">
+                                <p className="text-xs sm:text-sm font-medium">Playlist</p>
+                                <h1 className="text-2xl sm:text-5xl font-bold mt-1 sm:mt-2 mb-2 sm:mb-4">
                                     {editing ? (
                                         <input
                                             type="text"
                                             value={playlistName}
                                             onChange={(e) => setPlaylistName(e.target.value)}
-                                            className="bg-transparent border-b border-white text-white text-5xl font-bold"
+                                            className="bg-transparent border-b border-white text-white text-2xl sm:text-5xl font-bold w-full"
                                         />
                                     ) : (
                                         playlistDetails.name
                                     )}
                                 </h1>
-                                <p className="text-gray-300">
-                                    {playlistDetails.songs?.length || 0} songs
-                                </p>
+                                <div className="flex items-center gap-4 mt-4">
+                                    <p className="text-gray-300 text-sm sm:text-base">
+                                        {playlistDetails.songs?.length || 0} songs
+                                    </p>
+
+                                    <button
+                                        onClick={handlePlayPlaylist}
+                                        className="bg-green-500 hover:bg-green-600 rounded-full p-2 sm:p-2 shadow-md transition-transform duration-200 hover:scale-110 focus:outline-none"
+                                        aria-label="Play Playlist"
+                                    >
+                                        <Icon
+                                            icon="ic:baseline-play-arrow"
+                                            width="28"
+                                            height="28"
+                                            style={{ color: "white" }}
+                                        />
+                                    </button>
+                                </div>
+
+                                
                             </div>
                         </div>
+
                     </div>
 
                     {isEditingThumbnail && (
@@ -280,49 +341,67 @@ const SinglePlaylistView = () => {
                         </div>
                     )}
 
-                    <div className="px-6 pt-4 flex gap-4">
-                        {editing && playlistName !== playlistDetails.name ? (
-                            <div className="flex gap-2">
+                    <div className="px-4 md:px-6 pt-4 flex flex-col sm:flex-row gap-3 sm:gap-4">
+                        {/* Edit Playlist Name Section */}
+                        <div className="flex-shrink-0">
+                            {editing && playlistName !== playlistDetails.name ? (
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={updatePlaylistName}
+                                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 md:px-4 rounded-full text-xs md:text-sm"
+                                    >
+                                        Save Name
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setEditing(false);
+                                            setPlaylistName(playlistDetails.name);
+                                        }}
+                                        className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 md:px-4 rounded-full text-xs md:text-sm"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            ) : (
                                 <button
-                                    onClick={updatePlaylistName}
-                                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-1 rounded-full text-sm"
+                                    onClick={() => setEditing(true)}
+                                    className="text-gray-400 hover:text-white text-xs md:text-sm border border-gray-400 hover:border-white px-3 py-1 md:px-4 rounded-full"
                                 >
-                                    Save Name
+                                    Edit Playlist Name
                                 </button>
-                                <button
-                                    onClick={() => {
-                                        setEditing(false);
-                                        setPlaylistName(playlistDetails.name);
-                                    }}
-                                    className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-full text-sm"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        ) : (
-                            <button
-                                onClick={() => setEditing(true)}
-                                className="text-gray-400 hover:text-white text-sm border border-gray-400 hover:border-white px-4 py-1 rounded-full"
-                            >
-                                Edit Playlist Name
-                            </button>
-                        )}
+                            )}
+                        </div>
 
-                        <div className="flex gap-3">
+                        {/* Action Buttons Section */}
+                        <div className="flex flex-wrap gap-2 sm:gap-3">
                             <button
                                 onClick={sharePlaylist}
-                                className="text-blue-400 hover:text-white border border-blue-400 hover:border-white px-4 py-1 rounded-full text-sm"
+                                className="text-blue-400 hover:text-white border border-blue-400 hover:border-white px-3 py-1 md:px-4 rounded-full text-xs md:text-sm"
                             >
                                 Share Playlist
                             </button>
                             <button
                                 onClick={deletePlaylist}
-                                className="text-red-400 hover:text-white border border-red-400 hover:border-white px-4 py-1 rounded-full text-sm"
+                                className="text-red-400 hover:text-white border border-red-400 hover:border-white px-3 py-1 md:px-4 rounded-full text-xs md:text-sm"
                             >
                                 Delete Playlist
                             </button>
-                        </div>
 
+                            <div className="max-w-full">
+                                <div className="relative group cursor-pointer"
+                                onClick={()=>setShowImportModal(true)}>
+                                    <div className="absolute -inset-1 bg-gradient-to-r from-red-600 to-green-600 rounded-lg blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                                    <div className="relative px-3 py-1 md:px-4 md:py-2 bg-blue-400 ring-1 ring-gray-900/5 rounded-full leading-none flex items-center">
+                                        <p className="text-slate-800 text-xs md:text-sm whitespace-nowrap">
+                                            Add your spotify playlist Songs
+                                        </p>
+                                        <span className="absolute -top-2 -right-2 bg-gradient-to-br from-red-500 to-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide shadow-sm transform rotate-6 hover:rotate-0 transition-transform">
+                                            New
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="px-6 pt-6 pb-20 space-y-3">

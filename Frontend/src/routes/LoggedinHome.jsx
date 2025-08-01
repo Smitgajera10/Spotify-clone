@@ -14,43 +14,36 @@ function LoggedinHome() {
     trendingPlaylists,
     setTrendingPlaylists,
     trendingArtists,
-    setTrendingArtists
+    setTrendingArtists,
+    trendingRadio,
+    setTrendingRadio,
+    hasFetched,
+    setHasFetched
   } = useContext(TrendingContext);
   const navigate = useNavigate()
 
-  const [loadingSongs, setLoadingSongs] = useState(true);
-  const [loadingArtists, setLoadingArtists] = useState(true);
-  const [loadingPlaylists, setLoadingPlaylists] = useState(true);
-  const [loadingRadio, setLoadingRadio] = useState(true);
-
-
-  const [trendingRadio, setTrendingRadio] = useState([]);
 
   const getTrendingPlaylist = async () => {
-    try {
-      setLoadingPlaylists(true);
-      const response = await makeAuthenticatedGETRequest(`/api/popular-albums`);
-      if (!response) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      if (Array.isArray(response.albums)) {
-        setTrendingPlaylists(response.albums);
-
-      } else {
-        console.error("Unexpected response format:", response);
-        setTrendingPlaylists([]);
-      }
-    } catch (error) {
-      console.error('Error fetching trending playlists:', error);
-    } finally {
-      setLoadingPlaylists(false);
+  try {
+    
+    const ids = ["687b73bdee10a8f3d1286703"];
+    const playlists = [];
+    for (let i = 0; i < ids.length; i++) {
+      const data = await makeAuthenticatedGETRequest(`/playlist/get/${ids[i]}`);
+      if (data) playlists.push(data);
     }
-  };
+    // Now playlists is an array of playlist objects
+    setTrendingPlaylists(playlists);
+  } catch (error) {
+    console.error('Error fetching trending playlists:', error);
+    setTrendingPlaylists([]);
+  } 
+};
 
   const getTrendingSong = async () => {
     try {
-      setLoadingSongs(true);
-      const res = await makeAuthenticatedGETRequest(`/api/trending-songs?limit=12`);
+      
+      const res = await makeAuthenticatedGETRequest(`/api/tsongs`);
       if (Array.isArray(res.trendingSongs)) {
         setTrendingSongs(res.trendingSongs);
       } else {
@@ -60,14 +53,11 @@ function LoggedinHome() {
     } catch (error) {
       console.error('Error fetching trending songs:', res);
       setTrendingSongs([]);
-    } finally {
-      setLoadingSongs(false);
-    }
+    } 
   };
 
   const getTrendingArtist = async () => {
     try {
-      setLoadingArtists(true);
       const res = await makeAuthenticatedGETRequest(`/api/popular-artists`);
       if (Array.isArray(res.popularArtists)) {
         setTrendingArtists(res.popularArtists);
@@ -78,13 +68,11 @@ function LoggedinHome() {
     } catch (error) {
       console.error('Error fetching trending songs:', error);
       setTrendingArtists([]);
-    } finally {
-      setLoadingArtists(false);
-    }
+    } 
   }
   const getTrendingRadio = async () => {
     try {
-      setLoadingRadio(true);
+      
       const res = await makeAuthenticatedGETRequest(`/api/popular-radio`);
       if (Array.isArray(res.radio)) {
         setTrendingRadio(res.radio);
@@ -95,22 +83,24 @@ function LoggedinHome() {
     } catch (error) {
       console.error('Error fetching trending songs:', error);
       setTrendingRadio([]);
-    } finally {
-      setLoadingRadio(false);
     }
   }
 
   useEffect(() => {
-    if (trendingSongs.length === 0) {
-      getTrendingSong();
+    const loadData = async()=>{
+      if(hasFetched) return;
+      try {
+        await Promise.all([getTrendingSong(),
+        getTrendingPlaylist(),
+        getTrendingArtist(),
+        getTrendingRadio()])
+      
+        setHasFetched(true)
+      }catch (err) {
+        console.error("Trending data load failed:", err.message);
+      }
     }
-    if (trendingPlaylists.length === 0) {
-      getTrendingPlaylist();
-    }
-    if (trendingArtists.length === 0) {
-      getTrendingArtist();
-    }
-    getTrendingRadio()
+    loadData()
   }, []);
   return (
     <LoggedInContainer>
@@ -126,7 +116,7 @@ function LoggedinHome() {
       <div className="flex overflow-x-auto gap-4 px-4 sm:px-5 pb-4 hide-scrollbar">
 
 
-        {loadingSongs
+        {!hasFetched
           ? [...Array(6)].map((_, idx) => <SkeletonCard key={idx} />)
           : trendingSongs.slice(0, 6).map((song) => (
             <div className="w-[160px] sm:min-w-[200px] flex-shrink-0 group relative rounded-2xl p-2 hover:bg-[#181818]" key={song._id} onClick={() => { setCurrentSong(song) }}>
@@ -150,7 +140,7 @@ function LoggedinHome() {
       </div>
 
       <div className="flex overflow-x-auto gap-4 px-4 sm:px-5 pb-4 hide-scrollbar">
-        {loadingArtists
+        {!hasFetched
           ? [...Array(6)].map((_, idx) => <SkeletonCard key={idx} shape="circle" />)
           : trendingArtists.slice(0, 6).map((artist) => (
             <div
@@ -172,18 +162,18 @@ function LoggedinHome() {
 
       {/* Popular Albums */}
       <div className="flex justify-between items-center mx-4 my-4 sm:mx-5">
-        <h2 className="text-xl sm:text-2xl font-bold">Popular albums and singles</h2>
+        <h2 className="text-xl sm:text-2xl font-bold">Custom albums and singles</h2>
         <span className="text-xs sm:text-sm font-bold opacity-70">Show all</span>
       </div>
 
       <div className="flex overflow-x-auto gap-4 px-4 sm:px-5 pb-4 hide-scrollbar">
 
-        {loadingPlaylists
+        {!hasFetched
           ? [...Array(5)].map((_, idx) => <SkeletonCard key={idx} />)
           : trendingPlaylists.slice(0, 5).map((playlist) => (
-            <div className="w-[160px] sm:min-w-[200px] flex-shrink-0 group relative rounded-2xl p-2 hover:bg-[#181818]" key={playlist.id} onClick={() => { }}>
+            <div className="w-[160px] sm:min-w-[200px] flex-shrink-0 group relative rounded-2xl p-2 hover:bg-[#181818]" key={playlist._id} onClick={() => {navigate(`/playlist/${playlist._id}`) }}>
               <div className="w-[120px] h-[120px] sm:w-[150px] sm:h-[150px] m-auto rounded-2xl overflow-hidden">
-                <img src={playlist.image[2].url} alt="" className="w-full h-full object-cover" />
+                <img src={playlist.thumbnail} alt="" className="w-full h-full object-cover" />
               </div>
               <div className="opacity-0 group-hover:opacity-100 group-hover:translate-y-[-10px] transition-transform duration-300 ease-out w-[48px] h-[48px] bg-green-500 rounded-full absolute right-4 top-[95px] sm:top-[115px]">
                 <img src="assets/play.svg" alt="" className="w-[25px] m-[12px]" />
@@ -191,7 +181,7 @@ function LoggedinHome() {
               <div className="font-bold text-sm sm:text-base pt-2 px-2 truncate">
                 {playlist.name}
               </div>
-              <div className="opacity-70 text-sm px-2">{playlist.language}</div>
+              <div className="opacity-70 text-sm px-2">{playlist.description}</div>
             </div>
           ))}
       </div>
@@ -215,7 +205,7 @@ function LoggedinHome() {
           </div>
         </div>
 
-        {loadingRadio
+        {!hasFetched
           ? [...Array(4)].map((_, idx) => <SkeletonCard key={idx} />)
           : trendingRadio.map((Radio) => (
             <div className="w-[160px] sm:min-w-[200px] flex-shrink-0 group relative rounded-2xl p-2 hover:bg-[#181818]" key={Radio.id} onClick={() => { }}>
@@ -242,7 +232,7 @@ function LoggedinHome() {
 
 
       <div className="flex overflow-x-auto gap-4 px-4 sm:px-5 pb-6 hide-scrollbar">
-        {loadingSongs
+        {!hasFetched  
           ? [...Array(6)].map((_, idx) => <SkeletonCard key={idx} />)
           : trendingSongs.slice(6, 12).map((song) => (
             <div className="w-[160px] sm:min-w-[200px] flex-shrink-0 group relative rounded-2xl p-2 hover:bg-[#181818]" key={song._id} onClick={() => { setCurrentSong(song) }}>

@@ -14,6 +14,7 @@ import { useState } from "react";
 import SinglePlaylistView from "./routes/SinglePlaylistView.jsx";
 import TrendingContext from "./contexts/TrendingContext.js";
 import TrendingSongs from "./routes/TrendingSongs.jsx";
+import PlaylistMobile from "./routes/PlaylistMobile.jsx";
 
 function App() {
   const [cookie, setCookie] = useCookies(["token"]);
@@ -25,11 +26,13 @@ function App() {
   const [trendingSongs, setTrendingSongs] = useState([]);
   const [trendingPlaylists, setTrendingPlaylists] = useState([]);
   const [trendingArtists, setTrendingArtists] = useState([]);
+  const [trendingRadio , setTrendingRadio] = useState([]);
+  const [hasFetched , setHasFetched] = useState(false);
 
   return (
     <>
       <BrowserRouter>
-        <TrendingContext.Provider value={{ trendingSongs, setTrendingSongs, trendingPlaylists, setTrendingPlaylists, trendingArtists, setTrendingArtists }}>
+        <TrendingContext.Provider value={{ trendingSongs, setTrendingSongs, trendingPlaylists, setTrendingPlaylists, trendingArtists, setTrendingArtists, hasFetched , setHasFetched , trendingRadio , setTrendingRadio }}>
           {cookie.token ? (
             // routes for loggdin
             <SearchProvider>
@@ -39,6 +42,7 @@ function App() {
                   <Route path='/uploadSong' element={<UploadSong />} />
                   <Route path='/myMusic' element={<MyMusic />} />
                   <Route path='/search' element={<SearchPage />} />
+                  <Route path='/library' element={<PlaylistMobile />} />
                   <Route path='/playlist/:playlistId' element={<SinglePlaylistView />} />
                   <Route path='/trending-songs' element={<TrendingSongs/>} />
                   <Route path='*' element={<Navigate to="/" />} />

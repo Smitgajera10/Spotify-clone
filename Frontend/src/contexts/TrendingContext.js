@@ -7,6 +7,9 @@ const TrendingContext = createContext({
   setTrendingPlaylists : () =>{},
   trendingArtists : {},
   setTrendingArtists : () =>{},
+  trendingRadio : [],
+  setTrendingRadio : ()=>{},
+  hasFetched : false,
 });
 
 export default TrendingContext;

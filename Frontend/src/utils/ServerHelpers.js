@@ -39,7 +39,11 @@ export const makeAuthenticatedGETRequest = async (route) => {
             Authorization : `Bearer ${token}`
         },
     });
-
+    if(responce.status == 401){
+        document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+        window.location.href = "/login";
+        return null; 
+    }
     const formattedResponce = await responce.json();
     return formattedResponce;
 }
