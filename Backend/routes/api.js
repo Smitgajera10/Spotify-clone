@@ -5,7 +5,7 @@ const cron = require("node-cron");
 const passport = require("passport");
 const Playlist = require("../models/Playlist");
 const Song = require("../models/Song");
-const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-core");
 const axios = require("axios");
 const router = express.Router();
 
@@ -282,7 +282,11 @@ async function scrapeSpotifyPlaylist(playlistUrl) {
     throw new Error("Invalid Spotify playlist URL");
   }
 
-  const browser = await puppeteer.launch({ headless: true, args: ["--no-sandbox"] ,executablePath: puppeteer.executablePath(),});
+  const browser = await puppeteer.launch({
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome-stable",
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
   const page = await browser.newPage();
   await page.goto(playlistUrl, { waitUntil: "networkidle2" });
 
