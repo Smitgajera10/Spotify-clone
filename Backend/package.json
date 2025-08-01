@@ -13,7 +13,7 @@
     "node-cron": "^4.2.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
-    "puppeteer-core": "^10.1.0",
+    "puppeteer": "^24.15.0",
     "tailwindcss": "^4.0.9"
   },
   "name": "spotify",
