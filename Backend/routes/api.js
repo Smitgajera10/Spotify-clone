@@ -282,7 +282,7 @@ async function scrapeSpotifyPlaylist(playlistUrl) {
     throw new Error("Invalid Spotify playlist URL");
   }
 
-  const browser = await puppeteer.launch({ headless: true, args: ["--no-sandbox"] });
+  const browser = await puppeteer.launch({ headless: true, args: ["--no-sandbox"] ,executablePath: puppeteer.executablePath(),});
   const page = await browser.newPage();
   await page.goto(playlistUrl, { waitUntil: "networkidle2" });
 
