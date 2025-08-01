@@ -284,9 +284,8 @@ async function scrapeSpotifyPlaylist(playlistUrl) {
   }
 
   const browser = await puppeteer.launch({
-  args: chromium.args,
-  executablePath: await chromium.executablePath,
-  headless: chromium.headless,
+  headless: true,
+  args: ['--no-sandbox']
 });
   const page = await browser.newPage();
   await page.goto(playlistUrl, { waitUntil: "networkidle2" });
