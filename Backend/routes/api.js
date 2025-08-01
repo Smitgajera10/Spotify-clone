@@ -287,7 +287,7 @@ async function scrapeSpotifyPlaylist(playlistUrl) {
   args: ['--no-sandbox']
 });
   const page = await browser.newPage();
-  await page.goto(playlistUrl, { waitUntil: "networkidle2" });
+  await page.goto(playlistUrl, { waitUntil: "networkidle2", timeout: 60000 });
 
   await page.waitForSelector('[data-testid="tracklist-row"]', { timeout: 10000 });
   await autoScroll(page);
