@@ -40,7 +40,7 @@ function SpotifyImportModal({ show, onClose, onImport }) {
             &times;
           </button>
         </div>
-        <p className="text-blue-500 text-sm my-2">"This feature works only for 30 or less songs. If your playlist has more then 30 songs then the first 30 songs will be added and if the song is not in database , it wouldn't add"</p>
+        <p className="text-blue-500 text-sm my-2">"This feature works only for public playlists , if the playlist is owned or made by spotify it would not work"</p>
         <label className="block text-sm mb-2 text-gray-300">Spotify Public Playlist Link</label>
         <input
           type="text"

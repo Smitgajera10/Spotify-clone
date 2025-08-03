@@ -1,4 +1,4 @@
-import { useContext, useState, useRef, useEffect } from "react";
+import { useContext, useState, useRef, useEffect, useMemo } from "react";
 import songContext from "../contexts/songContext.js";
 
 
@@ -33,6 +33,16 @@ const SingleSongCard = ({ info, playSound }) => {
     const sec = Math.floor(seconds % 60);
     return `${min}:${sec.toString().padStart(2, "0")}`;
   };
+
+  function decodeHtmlEntities(str) {
+    const parser = new DOMParser();
+    const decoded = parser.parseFromString(str, "text/html").body.textContent;
+    return decoded;
+  }
+
+  const decodedName = useMemo(() => decodeHtmlEntities(info?.name), [info?.name]);
+
+
   return (
     <div className={`flex hover:bg-gray-800 p-2 rounded-sm ${currentSong?._id === info._id ? 'bg-gray-700' : ''}`} onClick={() => setCurrentSong(info)}>
       <div className="w-12 h-12 bg-cover bg-center"
@@ -42,7 +52,7 @@ const SingleSongCard = ({ info, playSound }) => {
 
       <div className="flex w-full">
         <div className="text-white flex justify-center flex-col pl-4 w-5/6">
-          <div className="cursor-pointer hover:underline">{info?.name}</div>
+          <div className="cursor-pointer hover:underline">{decodedName}</div>
           <div className="text-xs text-gray-400 cursor-pointer hover:underline"> {info?.artistName} </div>
         </div>
 

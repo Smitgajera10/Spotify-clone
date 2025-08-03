@@ -5,9 +5,10 @@ const cron = require("node-cron");
 const passport = require("passport");
 const Playlist = require("../models/Playlist");
 const Song = require("../models/Song");
-const puppeteer = require("puppeteer");
+const cheerio = require("cheerio");
 const axios = require("axios");
 const router = express.Router();
+const qs = require('qs');
 
 const SAAVN_BASE_URL = process.env.SAAVAN_BASE_URL;
 
@@ -56,7 +57,7 @@ router.get("/tsongs", async (req, res) => {
 
 async function updateTrendingSongs() {
   try {
-    const trending = await scrapeSpotifyPlaylist("https://open.spotify.com/playlist/37i9dQZF1DX0XUfTFmNBRM");
+    const trending = await scrapeKworbTrendingSongs();
     const results = await Promise.all(
       trending.map(async (songTitle) => {
         if (!songTitle) return null;
@@ -97,7 +98,16 @@ async function updateTrendingSongs() {
 
 // Schedule to run once a week (Sunday)
 cron.schedule("0 0 * * 0", updateTrendingSongs);
-updateTrendingSongs()
+router.post("/admin/update-trending" , async (req, res)=>{
+  try {
+    const response = await updateTrendingSongs();
+    res.status(200).json(response);
+  } catch (err) {
+    console.error("Manual trending update failed:", err.message);
+    res.status(500).json({ error: "Trending update failed" });
+  }
+});
+
 
 // Popular Albums
 router.get("/popular-albums", async (req, res) => {
@@ -219,7 +229,7 @@ router.post(
       if (!isOwner && !isCollaborator) {
         throw new Error("Not allowed to modify playlist");
       }
-      const songTitles = await scrapeSpotifyPlaylist(req.body.playlistUrl);
+      const songTitles = await fetchPlaylistSongs(req.body.playlistUrl);
       if (!Array.isArray(songTitles) || songTitles.length === 0) {
         return res.status(400).json({ error: "No song titles provided" });
       }
@@ -246,6 +256,7 @@ router.post(
               name: match.name,
               thumbnail: match.image?.[2]?.url || "",
               track: match.downloadUrl?.[4]?.url?.replace("http://", "https://") || "",
+              artistName: match.artists?.primary[0]?.name || "",
               artist: undefined, // Fill artist ObjectId if needed
             });
             song = newSong;
@@ -277,70 +288,72 @@ router.post(
   }
 );
 
-async function scrapeSpotifyPlaylist(playlistUrl) {
-  if (!playlistUrl?.includes("open.spotify.com/playlist/")) {
-    throw new Error("Invalid Spotify playlist URL");
+async function scrapeKworbTrendingSongs() {
+  const url = "https://kworb.net/spotify/country/in_weekly.html";
+
+  try {
+    const response = await axios.get(url);
+    const $ = cheerio.load(response.data);
+
+    const songs = [];
+    $("table tr").slice(1, 30).each((_, row) => {
+      const cells = $(row).find("td");
+      const artist = $(cells[1]).text().trim();
+      const title = $(cells[2]).text().trim();
+      if (title && artist) {
+        songs.push(`${title} ${artist}`);
+      }
+    });
+
+    return songs;
+  } catch (err) {
+    console.error("Cheerio scrape failed:", err.message);
+    return [];
   }
-
-  const browser = await puppeteer.launch({
-  headless: true,
-  args: ['--no-sandbox']
-});
-  const page = await browser.newPage();
-  await page.goto(playlistUrl, { waitUntil: "networkidle2", timeout: 60000 });
-
-  await page.waitForSelector('[data-testid="tracklist-row"]', { timeout: 10000 });
-  await autoScroll(page);
-
-  const songs = await page.evaluate(() => {
-  return Array.from(document.querySelectorAll('[data-testid="tracklist-row"]')).map(row => {
-    const titleEl = row.querySelector(
-      'a[data-testid="internal-track-link"] div.e-91000-text.encore-text-body-medium'
-    );
-    const title = titleEl?.textContent.trim() ?? null;
-
-    const artistEls = row.querySelectorAll(
-      'span.e-91000-text.encore-text-body-small a[href*="/artist/"]'
-    );
-    const artists = artistEls.length
-      ? Array.from(artistEls).map(el => el.textContent.trim()).join(', ')
-      : null;
-
-    return title && artists
-      ? `${title}`
-      : null;
-  }).filter(Boolean);
-});
-
-
-  await browser.close();
-  return songs;
 }
 
-async function autoScroll(page) {
-  await page.evaluate(async () => {
-    await new Promise((resolve) => {
-      let previousHeight = 0;
-      let retries = 0;
-      const interval = setInterval(() => {
-        const scrollHeight = document.documentElement.scrollHeight;
-        window.scrollBy(0, 500);
+async function fetchPlaylistSongs(playlistUrl) {
+  const playlistId = playlistUrl.split("/").pop().split("?")[0];
 
-        if (scrollHeight !== previousHeight) {
-          previousHeight = scrollHeight;
-          retries = 0;
-        } else {
-          retries++;
-        }
+  // Get access token
+  const tokenRes = await axios.post(
+    "https://accounts.spotify.com/api/token",
+    qs.stringify({ grant_type: "client_credentials" }),
+    {
+      headers: {
+        Authorization:
+          "Basic " +
+          Buffer.from(
+            process.env.SPOTIFY_ID + ":" + process.env.SPOTIFY_SECRET
+          ).toString("base64"),
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    }
+  );
 
-        // If nothing new loads after several tries, stop
-        if (retries > 5) {
-          clearInterval(interval);
-          resolve();
-        }
-      }, 500);
+  const accessToken = tokenRes.data.access_token;
+
+  let songNames = [];
+  let nextUrl = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`;
+
+  while (nextUrl) {
+    const trackRes = await axios.get(nextUrl, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      params: {
+        fields: "items(track(name)),next",
+        limit: 100,
+      },
     });
-  });
+
+    const names = trackRes.data.items
+      .map(({ track }) => track?.name?.trim())
+      .filter(Boolean);
+    
+    songNames.push(...names);
+    nextUrl = trackRes.data.next;
+  }
+
+  return songNames;
 }
 
 
