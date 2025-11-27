@@ -6,16 +6,8 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [tailwindcss(),react()],
   build: {
-    target: "esnext",
-    minify: "terser",
-    chunkSizeWarningLimit: 1000,
-    rollupOptions: {
-        output: {
-            manualChunks: {
-                react: ['react', 'react-dom'],
-                player: ['./src/contexts/songContext.js'],
-            }
-        }
+    target: "modules",
+    minify: "esbuild",
+    chunkSizeWarningLimit: 1000
     }
-}
 })
