@@ -13,7 +13,7 @@ export default defineConfig({
         output: {
             manualChunks: {
                 react: ['react', 'react-dom'],
-                player: ['./contexts/songContext.js'],
+                player: ['./src/contexts/songContext.js'],
             }
         }
     }
