@@ -1,3 +1,5 @@
+import React from "react";
+
 function SkeletonCard({ shape = "square" }) {
   const isCircle = shape === "circle";
 
@@ -14,4 +16,4 @@ function SkeletonCard({ shape = "square" }) {
   );
 }
 
-export default SkeletonCard;
+export default React.memo(SkeletonCard);

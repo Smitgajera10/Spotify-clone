@@ -1,4 +1,5 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
+import React from "react";
 import { useNavigate } from "react-router";
 
 
@@ -32,4 +33,4 @@ const PlaylistCard = ({ title, description, imgUrl, playlistId , owner}) => {
     );
 };
 
-export default PlaylistCard;
+export default React.memo(PlaylistCard);

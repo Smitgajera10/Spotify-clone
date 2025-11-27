@@ -10,12 +10,14 @@ const cors = require("cors");
 const JwtStrategy = require("passport-jwt").Strategy,
   ExtractJwt = require("passport-jwt").ExtractJwt;
 require("dotenv").config();
+const compression = require("compression");
 
 const app = express();
 const port = process.env.PORT;
 
 // for security of connecting fronted to backend ip
 app.use(cors());
+app.use(compression());
 
 //for converting all inputs to json
 app.use(express.json());

@@ -1,5 +1,6 @@
 import { useContext, useState, useRef, useEffect, useMemo } from "react";
 import songContext from "../contexts/songContext.js";
+import React from "react";
 
 
 const SingleSongCard = ({ info, playSound }) => {
@@ -65,4 +66,4 @@ const SingleSongCard = ({ info, playSound }) => {
   )
 }
 
-export default SingleSongCard
+export default React.memo(SingleSongCard);
